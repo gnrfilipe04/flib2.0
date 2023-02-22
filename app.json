@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "flib-2.0",
-    "slug": "flib-2.0",
+    "slug": "flib20",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
