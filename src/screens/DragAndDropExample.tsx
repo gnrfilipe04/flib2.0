@@ -7,8 +7,6 @@ import { areEqualsCirclesOverlapping } from "../utils/areEqualsCirclesOverlappin
 
 export function DragAndDropExample(){
 
-    const [ isOverlapping, setIsOverlapping ] = useState(false)
-
     const toast = useToast();
 
     const positionX = useSharedValue(170)
@@ -18,7 +16,7 @@ export function DragAndDropExample(){
     const recipientPositionY = useSharedValue(100)
 
     const color = useSharedValue('#34ebc9')
-    const recipientColor = useSharedValue('#c5f5ec')
+    const recipientColor = useSharedValue('#da204e')
 
     const circleDiameter = 80
     const circleRadius = circleDiameter / 2
@@ -53,33 +51,37 @@ export function DragAndDropExample(){
             ]
         }
     })
-    
-    const showToast = () => {
+
+    const showToast = (message: string) => {
         toast.show({
-            description: 'Movido com sucesso!'
+            description: message
         })
     }
 
     const handleOverlapping = (recipient: CircleDTO, circle: CircleDTO, circleDiameterOrRadius: number) => {
-        const areOverlapping = areEqualsCirclesOverlapping(recipient, circle, circleRadius)
+        const areOverlapping = areEqualsCirclesOverlapping(recipient, circle, circleDiameterOrRadius)
 
         if(areOverlapping){
+            recipientColor.value = '#1fe762'
             positionX.value = withSpring(recipientPositionX.value + 5)
             positionY.value = withSpring(recipientPositionY.value + 5)
+
+            showToast('Sucesso!')
         }else {
-            positionX.value = withSpring(0)
-            positionY.value = withSpring(0)
+            recipientColor.value = '#da204e'
+            positionX.value = withSpring(170)
+            positionY.value = withSpring(650)
         }
 
     }
 
     const changeColorRecipient = (recipient: CircleDTO, circle: CircleDTO, circleDiameterOrRadius: number) => {
-        const areOverlapping = areEqualsCirclesOverlapping(recipient, circle, circleRadius)
+        const areOverlapping = areEqualsCirclesOverlapping(recipient, circle, circleDiameterOrRadius)
 
         if(areOverlapping){
-            recipientColor.value = '#34aeeb'
+            recipientColor.value = '#1fe762'
         }else {
-            recipientColor.value = '#c5f5ec'
+            recipientColor.value = '#da204e'
         }
     }
 
@@ -98,11 +100,12 @@ export function DragAndDropExample(){
             positionX.value = withSpring(ctx.positionX + event.translationX)
             positionY.value = withSpring(ctx.positionY + event.translationY)
         },
-        onEnd: (event, ctx) => {
+        onEnd: () => {
 
-            positionX.value = withSpring(recipientPositionX.value + 5)
-            positionY.value = withSpring(recipientPositionY.value + 5)
-            //runOnJS(showToast)()
+            const circle: CircleDTO = { x: positionX.value, y: positionY.value }
+            const recipient: CircleDTO = { x: recipientPositionX.value, y: recipientPositionY.value }
+
+            runOnJS(handleOverlapping)(recipient, circle, circleRadius)
         },
     });
 
