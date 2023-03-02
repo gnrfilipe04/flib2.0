@@ -47,7 +47,7 @@ export function AnimatedList ({
           const inputRange = genInputRange(itemSize, index)
           const outputRangeOpacity = [.4, 1, .4]
           const outputRangeScale = [.7, 1, .7]
-
+          console.log({ inputRange })
           const opacity = interpolateByScroll(inputRange, outputRangeOpacity, scrollValue)
           const scale = interpolateByScroll(inputRange, outputRangeScale, scrollValue)
 

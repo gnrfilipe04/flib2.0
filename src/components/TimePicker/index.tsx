@@ -1,96 +1,158 @@
-import { useEffect, useRef, useState } from 'react';
-import { AnimatedList } from '../AnimatedList';
-import { Button } from '../Button';
+import { useState, useRef } from 'react'
+import { Text, Box } from 'native-base'
+import Animated, { interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 
-import { genHours } from './utils/genHours';
-import { genMinutes } from './utils/genMinutes';
+export function TimePicker(){
 
-import { 
-  Animated, 
-  Dimensions,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+    const [ initValue, setInitValue ] = useState({
+      hour: new Date().getHours(),
+      minutes: new Date().getMinutes()
+    })
 
-import { 
-  Container,
-  Separate,
-  ButtonContainer
-} from './styles';
+    const hRef = useRef<Animated.ScrollView>(null) 
+    const mRef = useRef<Animated.ScrollView>(null) 
 
-interface TimePickerProps {
-  
+    const [ hourSelected, setHourSelected ] = useState<String>('00')
+    const [ minuteSelected, setMinuteSelected ] = useState<String>('00')
+
+    const hours = ["", ...Array.from({ length: 24}, (_, index) => String(index).padStart(2, '0')), ""]
+    const minutes = ["", ...Array.from({ length: 60}, (_, index) => String(index).padStart(2, '0')), ""]
+
+    const HEIGHT = 120
+
+    const scrollHours = useSharedValue(0)
+    const scrollMinutes = useSharedValue(0)
+
+    const scrollHourHandler = useAnimatedScrollHandler({
+
+        onScroll: (event) => {
+            scrollHours.value = event.contentOffset.y
+        },
+        
+    });
+
+    const scrollMinuteHandler = useAnimatedScrollHandler({
+
+        onScroll: (event) => {
+            scrollMinutes.value = event.contentOffset.y
+        },
+        
+    });
+
+    const scrollTo = (ref: React.RefObject<Animated.ScrollView>, value = 0) => {
+      ref.current && ref.current.scrollTo({
+        x: 0,
+        y: HEIGHT / 3 * value,
+        animated: true
+      })
+    }
+
+    return (
+      <>
+      <Box flexDir={'row'} alignItems={'center'} justifyContent={'center'} maxH={HEIGHT}> 
+          
+          <Animated.ScrollView
+              ref={hRef}
+              showsVerticalScrollIndicator={false}
+              snapToInterval={HEIGHT / 3}
+              decelerationRate={'fast'}
+              onLayout={() => scrollTo(hRef, initValue.hour)}
+              onScroll={scrollHourHandler}
+              style={{flexGrow: 0}}
+              onMomentumScrollEnd={(event) => {
+
+                  const hour = (event.nativeEvent.contentOffset.y / (HEIGHT / 3)).toFixed(0).padStart(2, '0')
+
+                  setHourSelected(hour)
+              }}
+          >
+              {hours.map((item, index) => {
+                  const itemSize = HEIGHT / 3
+
+                  const inputRange = [
+                      (index - 2) * itemSize,
+                      (index - 1) * itemSize,
+                      index * itemSize,
+                  ]
+
+                  const outputRange = [.4, 1, .4]
+                  const outputRangeScale = [.7, 1, .7]
+
+                  const scaleItemStyle = useAnimatedStyle(() => {
+                      return {
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: HEIGHT / 3,
+                          opacity: interpolate(scrollHours.value, inputRange, outputRange),
+                          transform: [
+                              { scale: interpolate(scrollHours.value, inputRange, outputRangeScale)}
+                          ]
+                      }
+                  }) 
+
+                  return (
+                      <Animated.View 
+                          key={index}
+                          style={scaleItemStyle}>
+                          <Text color={'white'} fontSize={HEIGHT / 4}>{item}</Text>
+                      </Animated.View>
+                  )
+              })}
+          </Animated.ScrollView>
+
+          <Text textAlign={'center'} color={'white'} fontSize={HEIGHT / 4} px={5}>:</Text>
+          <Animated.ScrollView
+            ref={mRef}
+              showsVerticalScrollIndicator={false}
+              snapToInterval={HEIGHT / 3}
+              decelerationRate={'fast'}
+              onScroll={scrollMinuteHandler}
+              onLayout={() => scrollTo(mRef, initValue.minutes)}
+              style={{flexGrow: 0}}
+              onMomentumScrollEnd={(event) => {
+
+                  const minute = (event.nativeEvent.contentOffset.y / (HEIGHT / 3)).toFixed(0).padStart(2, '0')
+
+                  setMinuteSelected(minute)
+              }}
+          >
+              {minutes.map((item, index) => {
+                  const itemSize = HEIGHT / 3
+
+                  const inputRange = [
+                      (index - 2) * itemSize,
+                      (index - 1) * itemSize,
+                      index * itemSize,
+                  ]
+
+                  const outputRange = [.4, 1, .4]
+                  const outputRangeScale = [.7, 1, .7]
+
+                  const scaleItemStyle = useAnimatedStyle(() => {
+                      return {
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: HEIGHT / 3,
+                          opacity: interpolate(scrollMinutes.value, inputRange, outputRange),
+                          transform: [
+                              { 
+                                  scale: interpolate(scrollMinutes.value, inputRange, outputRangeScale),                            
+                              }
+                          ]
+                      }
+                  }) 
+
+                  return (
+                      <Animated.View 
+                          key={index}
+                          style={scaleItemStyle}>
+                          <Text color={'white'} fontSize={HEIGHT / 4}>{item}</Text>
+                      </Animated.View>
+                  )
+              })}
+          </Animated.ScrollView>
+          
+      </Box>
+      </>
+    )
 }
-
-export function TimePicker() {
-  const {height, width} = Dimensions.get('window')
-
-  const [time, setTime] = useState({
-    hours: '00',
-    minutes: '00'
-  })
-
-  const [hours, setHours] = useState<string[]>([])
-  const [minutes, setMinutes] = useState<string[]>([])
-
-  const arrHours = genHours()
-  const arrMinutes = genMinutes()
-
-  const itemSize = 40
-
-  const scrollYHours = useRef(new Animated.Value(0)).current
-  const scrollYM = useRef(new Animated.Value(0)).current
-
-  const getTime = () => {
-    console.log(time)
-  }
-
-  useEffect(() => {
-    setHours(arrHours)
-    setMinutes(arrMinutes)
-
-  }, [])
-
-  return (
-    <>
-    <Container 
-      maxHeight={120}>
-      <AnimatedList 
-        list={hours}
-        itemSize={itemSize}
-        scrollValue={scrollYHours}
-        getValue={(hours) => setTime({...time, hours})}
-      />
-      <Separate>:</Separate> 
-      <AnimatedList 
-        list={minutes}
-        itemSize={itemSize}
-        scrollValue={scrollYM}
-        getValue={(minutes) => setTime({...time, minutes})}
-      />
-    </Container>
-    
-    <ButtonContainer>
-      <Button 
-        bgColor='transparent'
-        textColor='white'
-        title='Cancelar'
-      />
-
-      <Button 
-        bgColor='transparent'
-        textColor='white'
-        title='Confirmar'
-        style={{
-          borderWidth: 1,
-          borderColor: 'white',
-          paddingVertical: 5,
-          paddingHorizontal: 15,
-          borderRadius: 4,
-        }}
-      />
-    </ButtonContainer>
-    </>
-  );
-};
